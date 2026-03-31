@@ -12,7 +12,7 @@ Kod okunabilirliği, thin controller yaklaşımı ve Laravel standartlarına (Re
 - **Framework:** Laravel 12
 - **Veritabanı:** MySQL
 - **ORM:** Eloquent
-- **Asenkron İşlemler:** Laravel Queue (Database driver)
+- **Bildirim:** Laravel Job yapısı (sync driver)
 
 ---
 
@@ -27,38 +27,48 @@ Bir ürünün ve bir kullanıcının birden fazla lisansı olabilir (One-to-Many
 ## Kurulum
 
 **1. Projeyi klonlayın ve dizine girin:**
-```
+```bash
 git clone <repo-url>
 cd license-api
 ```
 
 **2. Bağımlılıkları yükleyin:**
-```
+```bash
 composer install
 ```
 
 **3. Çevre değişkenlerini ayarlayın:**
+
+Windows:
+```bash
+copy .env.example .env
 ```
+
+Linux / macOS:
+```bash
 cp .env.example .env
+```
+
+```bash
 php artisan key:generate
 ```
 
-`.env` dosyasını açıp MySQL bağlantı bilgilerinizi girin ve queue driver'ını aşağıdaki gibi ayarlayın:
+`.env` dosyasını açıp MySQL bağlantı bilgilerinizi girin:
 
-```
+```env
 DB_DATABASE=license_api
-QUEUE_CONNECTION=database
+QUEUE_CONNECTION=sync
 ```
 
 **4. Veritabanını oluşturun ve örnek verileri ekleyin:**
-```
+```bash
 php artisan migrate:fresh --seed
 ```
 
 Bu komut tabloları oluşturur; Factory'ler aracılığıyla satılmış ve satılmamış lisansları da kapsayan örnek kullanıcı, ürün ve lisans kayıtlarını ekler.
 
 **5. Geliştirme sunucusunu başlatın:**
-```
+```bash
 php artisan serve
 ```
 
@@ -97,7 +107,7 @@ Belirtilen kullanıcıya ait lisansları döndürür. Route Model Binding kullan
 Kullanıcının bir ürün için lisans satın almasını sağlar.
 
 **Örnek istek gövdesi:**
-```
+```json
 {
   "user_id": 1,
   "product_id": 1
@@ -108,13 +118,9 @@ Kullanıcının bir ürün için lisans satın almasını sağlar.
 
 ---
 
-## Asenkron Bildirim (Queue & Job)
+## Job Tabanlı Bildirim
 
-Sipariş tamamlandığında ana akışı bloke etmemek için lisans teslimat süreci kuyruğa alınır. `SendLicenseEmailJob` tetiklenir ve işlem loglanır. Kuyruğu çalıştırmak için ayrı bir terminalde şu komutu kullanabilirsiniz:
-
-```
-php artisan queue:work --once
-```
+Satın alma işlemi tamamlandığında `SendLicenseEmailJob` tetiklenir ve işlem `Log::info()` aracılığıyla loglanır. Lokal ortamda ek tablo ihtiyacını önlemek adına `QUEUE_CONNECTION=sync` kullanılmıştır; job, istek akışı içinde eş zamanlı olarak çalışır.
 
 İşlem tamamlandığında `storage/logs/laravel.log` dosyasında ilgili log satırını görebilirsiniz.
 
@@ -124,7 +130,7 @@ php artisan queue:work --once
 
 Stoktaki boş lisans sayısı 5'in altına düşen ürünleri listelemek için:
 
-```
+```bash
 php artisan report:stock
 ```
 
